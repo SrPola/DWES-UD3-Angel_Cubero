@@ -1,100 +1,134 @@
 <?php
-/**
- * @author Angel Cubero Olivares
- * @date 2023-11-23
- */
+    /**
+     * @author SrPola
+     */
 
-include("./config/tests_cnf.php");
+    $iniciarTest = false;
+    $corregirTest = false;
+    $fallosPermitidos = 1;
+    $aprobado = false;
+    
 
-$iniciar_test = false;
-$corregir_test = false;
+    include("./config/tests_cnf.php");
 
-if (isset($_POST['iniciar_test'])) {
-    $iniciar_test = true;
-}
-
-if (isset($_POST['corregir_test'])) {
-    $iniciar_test = true;
-    $corregir_test = true;
-}
-
-function mostrar_test($test)
-{
-    foreach ($test["Preguntas"] as $pregunta) {
-        echo "<h2>" . $pregunta["Pregunta"] . "</h2>";
-        if (file_exists("./dir_img_test" . $test["idTest"] . "/img" . $pregunta["idPregunta"] . ".jpg")) {
-            echo '<img src="./dir_img_test' . $test["idTest"] . '/img' . $pregunta["idPregunta"] . '.jpg"><br>';
-        }
-        for ($i = 0; $i < count($pregunta["respuestas"]); $i++) {
-            echo '<input type="radio" id="' . $pregunta["idPregunta"] . $i . '" value="' . $i . '" name="' . $pregunta["idPregunta"] . '">';
-            echo '<label for="' . $pregunta["idPregunta"] . $i . '">' . $pregunta["respuestas"][$i] . '</label><br>';
-        }
-    }
-}
-
-function corregir_test($test, $respuestas)
-{
-    $puntaje = 0;
-    $respuestasCorrectas = $test["Corrector"];
-
-    foreach ($test["Preguntas"] as $index => $pregunta) {
-        // Comparar la respuesta del estudiante con la respuesta correcta
-        $respuestaEstudiante = $respuestas[$pregunta["idPregunta"]];
-        $respuestaCorrecta = $respuestasCorrectas[$index];
-
-        if ($respuestaEstudiante == $respuestaCorrecta) {
-            $puntaje++;
-        }
+    if (isset($_POST["iniciarTest"])) {
+        $iniciarTest = true;
+        $idTest = $_POST["test"];
     }
 
-    return $puntaje;
-}
+
+    $respuestas = array();
+    $contadorFallos = 0;
+    $respuestasElegidas = array();
+    if (isset($_POST["corregirTest"])) {
+        $idTest = $_POST["idTest"];
+        $corregirTest = true;
+        $correctas = $aTests[$_POST["indice_corrector"]]["Corrector"];
+
+        foreach ($aTests[$_POST["indice_corrector"]]["Preguntas"] as $pregunta) {
+            $idPregunta = $pregunta["idPregunta"];
+            if (isset($_POST[$idPregunta])) {
+                $respuestasElegidas[] = $_POST[$idPregunta];
+            }
+        }
+        echo "<br>";
+    }
+        
 
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="author" content="Angel Cubero Olivares">
-    <title>Test autoescuela</title>
-</head>
-
-<body>
-    <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
-        <label for="elegir_test">Selecciona un test:</label>
-        <select name="elegir_test" id="elegir_test">
-            <?php
-            foreach ($Tests as $test) {
-                echo '<option value="' . $test["idTest"] . '"';
-                if (isset($_POST['elegir_test']) && $_POST['elegir_test'] == $test["idTest"]) {
-                    echo ' selected';
-                }
-                echo '>' . $test["Permiso"] . ' ' . $test["Categoria"] . '</option>';
-            }
-            ?>
-        </select>
-        <br>
-        <input type="submit" name="iniciar_test" value="Iniciar test">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Test autoescuela</title>
+    </head>
+    <body>
+        <form method="post">
+            <label for="test">Seleccione el test a realizar: </label>
+            <select name="test">
+                <?php
+                    foreach ($aTests as $value) {
+                       echo '<option value="'.$value["idTest"].'">'.$value["Categoria"].' Examen '.$value["idTest"].' '.$value["Permiso"].'</option>';
+                    }
+                ?>
+            </select>
+            <br>
+            <input type="submit" name="iniciarTest" value="Iniciar test">
+        </form>
         <?php
-        if ($iniciar_test) {
-            $selectedTest = $Tests[$_POST["elegir_test"]];
-            mostrar_test($selectedTest);
-            echo '<input type="submit" name="corregir_test" value="Corregir test">';
-        }
-        if ($corregir_test) {
-            echo '<input type="hidden" name="corregir_test" value="1">'; // Campo oculto
-            $respuestas = array();
-            foreach ($selectedTest["Preguntas"] as $pregunta) {
-                $respuestas[$pregunta["idPregunta"]] = isset($_POST[$pregunta["idPregunta"]]) ? $_POST[$pregunta["idPregunta"]] : '';
-            }
-            $puntaje = corregir_test($selectedTest, $respuestas);
-            echo "<p>Puntuación: {$puntaje} de " . count($selectedTest["Preguntas"]) . "</p>";
-        }
+            if ($iniciarTest) {
         ?>
-        <br>
-    </form>
-</body>
+            <h2>Examen</h2>
+            <form method="post">
+                <?php
+                    $contadorTest = 0;
+                    echo '<input type="hidden" name="idTest" value="'.$idTest.'">';
+                    foreach ($aTests as $value) {
+                        if ($value["idTest"] == $idTest) {
+                            echo '<input type="hidden" name="indice_corrector" value="'.$contadorTest.'">';
+                            foreach ($value["Preguntas"] as $pregunta) {
+                                echo '<h3>'.$pregunta["Pregunta"].'</h3>';
 
+                                $rutaImagen = './dir_img_test'.$idTest.'/img'.$pregunta["idPregunta"].'.jpg';
+                                if (file_exists($rutaImagen)) {
+                                    echo '<img src="'.$rutaImagen.'"><br>';
+                                }
+
+                                $posicionPregunta = 0;
+                                foreach ($pregunta["respuestas"] as $respuesta) {
+                                    echo '<input type="radio" id="'.$pregunta["idPregunta"].'" name="'.$pregunta["idPregunta"].'" value="'.$indexLetra[$posicionPregunta].'">';
+                                    echo '<label for="'.$pregunta["idPregunta"].'">'.$respuesta.'</label><br>';
+                                    $posicionPregunta ++;
+                                }
+                            }
+
+                            echo '<br><input type="submit" name="corregirTest" value="Corregir test">';
+                        }
+                        $contadorTest ++;
+                    }
+                ?>
+            </form>
+        <?php
+            }
+        ?>
+
+        <?php
+            if ($corregirTest) {
+                $contadorTest = 0;
+                foreach ($aTests as $value) {
+                    if ($value["idTest"] == $idTest) {
+                        foreach ($value["Preguntas"] as $pregunta) {
+                            $idPregunta = $pregunta["idPregunta"];
+                            if (isset($_POST[$idPregunta])) {
+                                $respuestas[] = $_POST[$idPregunta];
+                            }
+                        }
+                    }
+                    $contadorTest ++;
+                }
+
+                $contadorRespuestas = 0;
+                foreach ($respuestas as $respuesta) {
+                    if ($respuesta == $correctas[$contadorRespuestas]) {
+                        echo '<p style="color: green;">Respuesta correcta</p>';
+                    } else {
+                        echo '<p style="color: red;">Respuesta incorrecta</p>';
+                        $contadorFallos ++;
+                    }
+                    $contadorRespuestas ++;
+                }
+
+                if ($contadorFallos <= $fallosPermitidos) {
+                    $aprobado = true;
+                }
+
+                if ($aprobado) {
+                    echo '<p style="color: green;">Aprobado</p>';
+                } else {
+                    echo '<p style="color: red;">Suspendido</p>';
+                }
+            }
+        ?>
+    </body>
 </html>

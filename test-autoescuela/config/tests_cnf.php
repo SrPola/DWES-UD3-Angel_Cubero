@@ -1,5 +1,5 @@
 <?php
-$Tests = array(
+$aTests = array(
       array("idTest"=>1,
             "Permiso"=>"Permiso B",
             "Categoria"=>"Categoría Preguntas oficiales de la DGT",
@@ -139,3 +139,5 @@ $Tests = array(
                                           ))
       )
 );
+
+$indexLetra = array("a", "b", "c");
